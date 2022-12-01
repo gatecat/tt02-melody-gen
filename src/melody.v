@@ -4,25 +4,7 @@ module prog_melody_gen (
   input [7:0] io_in,
   output [7:0] io_out
 );
-    localparam CLK_FREQ = 25000;
-
-    localparam [7:0] FB = CLK_FREQ / 494;
-    localparam [7:0] FAS = CLK_FREQ / 466;
-    localparam [7:0] FA = CLK_FREQ / 440;
-    localparam [7:0] FGS = CLK_FREQ / 415;
-    localparam [7:0] FG = CLK_FREQ / 392;
-    localparam [7:0] FFS = CLK_FREQ / 370;
-    localparam [7:0] FF = CLK_FREQ / 350;
-    localparam [7:0] FE = CLK_FREQ / 330;
-    localparam [7:0] FD = CLK_FREQ / 294;
-    localparam [7:0] FCS = CLK_FREQ / 277;
-    localparam [7:0] FC = CLK_FREQ / 262;
-
-    localparam [87:0] tbl = {
-        FB, FAS, FA, FGS, FG, FFS, FF, FE, FD, FCS, FC
-    };
-
-    reg [11:0] div_tmr = 0;
+    reg [9:0] div_tmr = 0;
     reg tick;
     reg state;
     reg [7:0] curr_tone;
@@ -51,10 +33,10 @@ module prog_melody_gen (
             if (tick) begin
                 if (!state) begin
                     tone_seq <= tone_seq + 1'b1;
-                    if (rom_rdata == 11)
+                    if (rom_rdata == 15)
                         curr_tone <= 0; // silence
                     else
-                        curr_tone <= tbl[rom_rdata * 8 +: 8]; // note
+                        curr_tone <= 12 + rom_rdata; // note
                 end else begin
                     curr_tone <= 0; // gap between notes
                 end
@@ -75,13 +57,16 @@ module prog_melody_gen (
 
     assign io_out[0] = mel_out;
 
-    localparam C = 4'd0, CS = 4'd1, D = 4'd2, E = 4'd3, F = 4'd4, FS = 4'd5, G = 4'd6, GS = 4'd7, A = 4'd8, AS = 4'd9, B = 4'd10, S = 4'd11;
+    localparam C = 4'd11, CS = 4'd10, D = 4'd9, E = 4'd7, F = 4'd6, FS = 4'd5, G = 4'd4, GS = 4'd3, A = 4'd2, AS = 4'd1, B = 4'd0, S = 4'd15;
     localparam [4*64:0] JINGLE_BELS = {
-        E, E, E, S, E, E, E, S, E, G, C, S, D, S,
-        E, S, F, F, F, S, F, F, E, E, E, E, S,
-        E, D, D, E, D, G, S, E, E, E, E, E, E, S,
-        E, G, C, S, D, E, S, S, F, F, F, F, S,
-        F, E, E, E, E, G, G, F, D, C
+        E, E, E, S, E, E, E, S,
+        E, G, C, D, E, S, F, F,
+        F, F, F, E, E, E, E, E,
+        D, D, E, D, S, G, S, E,
+        E, E, S, E, E, E, S, E,
+        G, C, D, E, S, F, F, F,
+        F, F, E, E, E, E, F, F,
+        E, D, C, S, S, S, S, S
     };
 
     wire [3:0] tone_rom[0:63];
@@ -106,7 +91,7 @@ module prog_melody_gen (
                 .X(word_we)
             );
             for (jj = 0; jj < 4; jj = jj + 1'b1) begin : bits
-                localparam pgm_bit = JINGLE_BELS[ii * 4 + jj];
+                localparam pgm_bit = JINGLE_BELS[(63 - ii) * 4 + jj];
                 wire lat_o;
                 sky130_fd_sc_hd__dlrtp_1 rfbit_i (
                     .GATE(word_we),

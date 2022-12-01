@@ -4,3 +4,5 @@
 *.fst
 runs/
 *.vvp
+samples.txt
+*.wav

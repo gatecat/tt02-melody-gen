@@ -27,13 +27,18 @@ module tb;
     end
     endtask
 
-    integer i, j;
+    integer i, j, fd;
     initial begin
         restart = 1'b1;
         #100;
         reload = 1'b1;
         restart = 1'b0;
-        repeat (1000000) cycle;
+        fd = $fopen("samples.txt", "w");
+        repeat (1024*65*2) begin
+            cycle;
+            $fdisplay(fd, "%b", mel);
+        end
+        $fclose(fd);
     end
 
     // wire up the inputs and outputs
